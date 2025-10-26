@@ -1,0 +1,43 @@
+{
+  "models": {
+    "xgboost": {
+      "train_score": 1.0,
+      "test_score": 1.0,
+      "cv_mean": 1.0,
+      "cv_std": 0.0
+    },
+    "lightgbm": {
+      "train_score": 1.0,
+      "test_score": 1.0,
+      "cv_mean": 1.0,
+      "cv_std": 0.0
+    },
+    "gradient_boosting": {
+      "train_score": 1.0,
+      "test_score": 1.0,
+      "cv_mean": 1.0,
+      "cv_std": 0.0
+    },
+    "random_forest": {
+      "train_score": 1.0,
+      "test_score": 1.0,
+      "cv_mean": 0.9916666666666666,
+      "cv_std": 0.016666666666666653
+    },
+    "adaboost": {
+      "train_score": 0.8777777777777778,
+      "test_score": 0.9055555555555556,
+      "cv_mean": 0.8680555555555556,
+      "cv_std": 0.017568209223157653
+    },
+    "ensemble": {
+      "train_score": 1.0,
+      "test_score": 1.0,
+      "cv_mean": 1.0,
+      "cv_std": 0.0
+    }
+  },
+  "best_model": "xgboost",
+  "created_date": "2025-10-26T09:42:55.165915",
+  "feature_count": 8000
+}
