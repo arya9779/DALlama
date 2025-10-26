@@ -1,6 +1,7 @@
-# 🦙📈 Advanced DALlama - Indian Stock Market Sentiment Analysis
+# 🦙📈DALlama - Dalal Street's AI
 
-**Production-Ready Sentiment Analysis with RAG + Boosting Models**
+
+**Indian Stock Market Sentiment Analysis with RAG + Boosting Models**
 
 ## 🎯 **Current Performance (Updated)**
 - **Overall Accuracy**: **70.0%** (improved from 35% baseline)
