@@ -213,7 +213,7 @@ class RAGSentimentPredictor:
                 "Nifty crashes 800 points on global concerns and FII selling",
                 "TCS faces headwinds from client budget cuts and layoffs",
                 
-                # Neutral Examples
+                # Neutral Examples (Enhanced)
                 "Company reports in-line quarterly results meeting expectations",
                 "Stock trades flat following mixed earnings report",
                 "Firm maintains guidance for the year with steady outlook",
@@ -223,14 +223,25 @@ class RAGSentimentPredictor:
                 "Firm reports stable performance in challenging environment",
                 "Market sentiment remains mixed amid policy uncertainty",
                 "HDFC Bank maintains stable performance this quarter",
-                "RBI policy decision in line with market expectations"
+                "RBI policy decision in line with market expectations",
+                "Company maintains steady revenue growth as expected",
+                "Stock price unchanged after routine quarterly update",
+                "Firm's performance consistent with previous quarter",
+                "Results align with management guidance provided earlier",
+                "Company reports normal business operations continue",
+                "Stock trading within expected range following results",
+                "Quarterly performance shows no significant changes",
+                "Company maintains stable market position",
+                "Results meet consensus estimates with minimal variance",
+                "Firm continues steady progress on strategic initiatives"
             ],
             'sentiment': [
                 # Positive: 2
                 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
                 # Negative: 0  
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                # Neutral: 1
+                # Neutral: 1 (Enhanced with 20 examples)
+                1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
                 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
             ]
         }
@@ -534,8 +545,40 @@ class RAGSentimentPredictor:
         
         return confidence
     
+    def detect_neutral_patterns(self, text):
+        """Detect neutral sentiment patterns specifically."""
+        text_lower = text.lower()
+        
+        # Neutral pattern indicators
+        neutral_patterns = [
+            # Expectation matching
+            ('meet', 'expectation'), ('in line', 'with'), ('as expected', ''),
+            ('no surprise', ''), ('consensus', 'estimate'),
+            
+            # Stability indicators  
+            ('maintain', 'guidance'), ('stable', 'performance'), ('steady', 'growth'),
+            ('unchanged', ''), ('flat', 'trading'), ('consistent', 'with'),
+            
+            # Routine/Normal indicators
+            ('routine', 'change'), ('normal', 'operation'), ('regular', 'update'),
+            ('standard', 'procedure'), ('typical', 'quarter'),
+            
+            # Neutral descriptors
+            ('mixed', 'result'), ('moderate', 'growth'), ('gradual', 'improvement'),
+            ('minimal', 'change'), ('slight', 'increase')
+        ]
+        
+        pattern_score = 0
+        for pattern1, pattern2 in neutral_patterns:
+            if pattern1 in text_lower:
+                pattern_score += 1
+                if pattern2 and pattern2 in text_lower:
+                    pattern_score += 1  # Bonus for complete phrase
+        
+        return pattern_score
+    
     def apply_bias_correction(self, text, prediction, confidence):
-        """Apply bias correction for obvious sentiment cases (Critical Fix)."""
+        """Apply enhanced bias correction including neutral sentiment detection."""
         text_lower = text.lower()
         
         # Strong positive indicators
@@ -550,24 +593,61 @@ class RAGSentimentPredictor:
         strong_negative = [
             'crash', 'plummet', 'collapse', 'tumble', 'bankruptcy', 'fraud',
             'investigation', 'scandal', 'disaster', 'crisis', 'loss', 'decline',
-            'fall', 'drop', 'down', 'weak', 'poor', 'bad', 'concern', 'worry'
+            'fall', 'drop', 'down', 'weak', 'poor', 'bad'
+        ]
+        
+        # Strong neutral indicators (NEW)
+        strong_neutral = [
+            'in-line', 'inline', 'meet', 'meets', 'expectations', 'expected',
+            'maintain', 'maintains', 'stable', 'steady', 'flat', 'unchanged',
+            'routine', 'regular', 'normal', 'guidance', 'outlook', 'forecast',
+            'consistent', 'line with', 'as expected', 'no change', 'status quo'
+        ]
+        
+        # Neutral phrases (multi-word)
+        neutral_phrases = [
+            'in line with', 'meet expectations', 'as expected', 'no surprises',
+            'maintains guidance', 'steady performance', 'routine changes',
+            'minimal movement', 'stable outlook'
         ]
         
         positive_count = sum(1 for word in strong_positive if word in text_lower)
         negative_count = sum(1 for word in strong_negative if word in text_lower)
+        neutral_count = sum(1 for word in strong_neutral if word in text_lower)
+        neutral_phrase_count = sum(1 for phrase in neutral_phrases if phrase in text_lower)
         
-        # Override prediction if there's strong evidence
-        if positive_count >= 1 and negative_count == 0 and 'miss' not in text_lower and 'disappoint' not in text_lower:
+        # Enhanced neutral detection with pattern recognition
+        pattern_score = self.detect_neutral_patterns(text)
+        total_neutral_score = neutral_count + (neutral_phrase_count * 2) + pattern_score
+        
+        # Decision logic with neutral priority
+        if total_neutral_score >= 3 or neutral_phrase_count >= 1 or pattern_score >= 2:
+            # Strong neutral indicators
+            return {
+                'sentiment': 'Neutral',
+                'label': 1,
+                'confidence': min(0.80, confidence + 0.15)
+            }
+        elif positive_count >= 1 and negative_count == 0 and total_neutral_score == 0 and 'miss' not in text_lower and 'disappoint' not in text_lower:
+            # Clear positive
             return {
                 'sentiment': 'Positive',
                 'label': 2,
                 'confidence': min(0.85, confidence + 0.2)
             }
-        elif negative_count >= 1 and positive_count == 0:
+        elif negative_count >= 1 and positive_count == 0 and total_neutral_score == 0:
+            # Clear negative
             return {
                 'sentiment': 'Negative',
                 'label': 0,
                 'confidence': min(0.90, confidence + 0.1)
+            }
+        elif total_neutral_score >= 1 and (positive_count + negative_count) <= 1:
+            # Moderate neutral indicators
+            return {
+                'sentiment': 'Neutral',
+                'label': 1,
+                'confidence': min(0.75, confidence + 0.1)
             }
         
         # Return original prediction
